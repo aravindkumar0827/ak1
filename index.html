@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Language Translator</title>
+    <link rel="icon" href="static/favicon.jpeg" type="image/x-icon">
+    <link rel="shortcut icon" href="static/favicon.jpeg" type="image/x-icon">    
+    <style>
+        body {  
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url('/static/ak1.png'); /* Path to your background image */
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+            color: #f5f5f5; /* Dark white color */
+            text-shadow: 2px 2px 5px rgba(0, 128, 255, 0.5); /* Optional for better readability */
+            font-size: 1.8rem;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        label {
+            font-weight: bold;
+            color: #f5f5f5; 
+        }
+        textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #8f8f8f;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.2); /* Transparent background */
+            color: #f5f5f5; 
+            font-size: 1rem;
+        }
+        select {
+            appearance: none; /* Remove default arrow for better styling */
+            background-color: rgba(0, 0, 0, 0); /* Fully transparent background */
+        }
+        option {
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent for better readability */
+            color: #ede2e2; /* Text color for options */
+        }
+        .button-92 {
+            --c: #fff;
+            background: linear-gradient(90deg, #0000 33%, #fff5, #0000 67%) var(--_p,100%)/300% no-repeat,
+            #004dff;
+            color: #0000;
+            border: none;
+            transform: perspective(500px) rotateY(calc(20deg*var(--_i,-1)));
+            text-shadow: calc(var(--_i,-1)* 0.08em) -.01em 0   var(--c),
+            calc(var(--_i,-1)*-0.08em)  .01em 2px #0004;
+            outline-offset: .1em;
+            transition: 0.3s;
+            font-weight: bold;
+            font-size: 1rem;
+            margin: 0;
+            cursor: pointer;
+            padding: .5em 1em;
+            border-radius: 5px;
+        }
+        .button-92:hover,
+        .button-92:focus-visible {
+            --_p: 0%;
+            --_i: 1;
+        }
+        .button-92:active {
+            text-shadow: none;
+            color: var(--c);
+            box-shadow: inset 0 0 9e9q #0005;
+            transition: 0s;
+        }
+        h2 {
+            margin: 20px 0 10px;
+            color: #f5f5f5; /* Match headings with the theme */
+            font-size: 1.4rem;
+        }
+        p {
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #8f8f8f;
+            background-color: rgba(255, 255, 255, 0.2); /* Transparent background */
+            color: #f5f5f5; /* Match text color with the theme */
+            font-size: 1rem;
+        }
+
+        /* Media Query for Mobile Devices */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            .container {
+                width: 90%;
+                padding: 10px;
+            }
+            textarea, select {
+                font-size: 0.9rem;
+            }
+            .button-92 {
+                font-size: 0.9rem;
+                padding: 0.5em 0.8em;
+            }
+            h2 {
+                font-size: 1.2rem;
+            }
+            p {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Text Translator</h1>
+    <div class="container">
+        <form method="POST">
+            <label for="input_text">Enter or Speak the text to be translated:</label><br>
+            <textarea id="input_text" name="input_text" rows="4" required></textarea>
+            <button type="button" id="start-voice" class="button-92">🎙️ Speak</button>
+            <br>
+            <label for="target_language">Select the target language:</label><br>
+            <select name="target_language">
+                {% for lang in languages %}
+                    <option value="{{ lang.code }}">{{ lang.name }}</option>
+                {% endfor %}
+            </select><br><br>
+            <button class="button-92" role="button" type="submit">Translate</button>
+        </form>
+        
+        {% if input_text %}
+        <h2>Input Text:</h2>
+        <p>{{ input_text }}</p>
+        {% endif %}
+        {% if translated_text %}
+        <h2>Translated Text:</h2>
+        <p>{{ translated_text }}</p>
+        <button id="play-audio" class="button-92">▶️ Play Audio</button>
+        <audio id="audio-player" style="display: none;">
+            <source src="{{ audio_filename }}" type="audio/mpeg">
+        </audio>
+        {% endif %}
+    </div>
+
+    <script>
+        const startVoiceButton = document.getElementById('start-voice');
+        const inputTextArea = document.getElementById('input_text');
+        const playAudioButton = document.getElementById('play-audio');
+        const audioPlayer = document.getElementById('audio-player');
+
+        startVoiceButton.addEventListener('click', () => {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US'; // Set language for speech recognition
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                inputTextArea.value = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                alert('Voice recognition error: ' + event.error);
+            };
+        });
+
+        playAudioButton?.addEventListener('click', () => {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                playAudioButton.textContent = '⏸️ Pause Audio';
+            } else {
+                audioPlayer.pause();
+                playAudioButton.textContent = '▶️ Play Audio';
+            }
+        });
+    </script>
+</body>
+</html>
